@@ -9,6 +9,9 @@ import requests
 import time
 from io import StringIO
 
+
+flags = [256, 512] #, 384, 640]
+
 def DASCHconvert(path, file, filename):
 
 	directory = path + file
@@ -17,8 +20,10 @@ def DASCHconvert(path, file, filename):
 	year = data['year']
 	mag = data['magcal_magdep']
 	mag_err = data['magcal_local_rms']
+	qual = data['quality']
 
-	new_file = pd.concat([year, mag, mag_err], axis = 1, keys = ['year', 'mag', 'mag_err'])
+
+	new_file = pd.concat([year, mag, mag_err, qual], axis = 1, keys = ['year', 'mag', 'mag_err', 'quality'])
 
 	new_file.to_csv(path+filename, index = False)
 	print('new file made! file',filename, 'made from DASCH file', file)
@@ -41,15 +46,19 @@ def DASCHplot(path, file, filename, save = True, show = True):
 	year = data['year']
 	mag = data['magcal_magdep']
 	mag_err = data['magcal_local_rms']
+	qual = data['quality']
 
 	plt.figure(figsize = (5,5))
 
 # in a loop we use an index as well -- choose the index and it loops throught the data
+	for i in range(len(qual)):
 
-	for i in range(len(year)):
-		if mag_err[i] < 0.4:
-			plt.scatter(year[i], mag[i], color = 'crimson', alpha  = 0.5, s = 25, edgecolor = 'black')
-			plt.errorbar(year[i], mag[i], color = 'black', alpha = 0.5, yerr = mag_err[i], ls = 'none')
+		for fl in flags:
+			if qual[i] == fl:
+
+				if mag_err[i] < 0.4:
+					plt.scatter(year[i], mag[i], color = 'crimson', alpha  = 0.5, s = 25, edgecolor = 'black')
+					plt.errorbar(year[i], mag[i], color = 'black', alpha = 0.5, yerr = mag_err[i], ls = 'none')
 
 	plt.xlabel('Year')
 	plt.ylabel('Apparent magnitude')
@@ -61,7 +70,7 @@ def DASCHplot(path, file, filename, save = True, show = True):
 	if show == True:
 		plt.show()
 
-#DASCHplot(path = '/Users/conorransome/Downloads/', file = 'short_15-59-30.1622_25-55-12.613_APASS_J155930.1+255512_0001.txt', filename = 'TCrBtest.pdf', save = False, show = True)
+DASCHplot(path = '/Users/conorransome/Downloads/', file = 'short_15-59-30.1622_25-55-12.613_APASS_J155930.1+255512_0001.txt', filename = 'TCrBtest.pdf', save = False, show = True)
 
 def DASCHimplot(path, file, imfile, filename,  pixmax, pixmin, colormap, save = True, show = True):
 	directory = path + file
@@ -70,6 +79,7 @@ def DASCHimplot(path, file, imfile, filename,  pixmax, pixmin, colormap, save = 
 	year = lc_data['year']
 	mag = lc_data['magcal_magdep']
 	mag_err = lc_data['magcal_local_rms']
+	qual = lc_data['quality']
 
 	tcrb = fits.open(path+imfile)
 
@@ -95,15 +105,16 @@ def DASCHimplot(path, file, imfile, filename,  pixmax, pixmin, colormap, save = 
 	ax1 = plt.subplot(1,2,1)
 	ax2 = plt.subplot(1,2,2)
 
-	for i in range(len(year)):
-		if mag_err[i] < 0.4:
-			#plt.scatter(year[i], mag[i], color = 'crimson', alpha  = 0.5, s = 25, edgecolor = 'black')
-			#plt.errorbar(year[i], mag[i], color = 'black', alpha = 0.5, yerr = mag_err[i])
+	for i in range(len(qual)):
+		for fl in flags:
+			if qual[i] == fl:
+				if mag_err[i] < 0.4:
+			
 
 	# ax1 will be our light curve
 
-			ax1.scatter(year[i], mag[i], color = 'crimson', alpha  = 0.5, s = 25, edgecolor = 'black')
-			ax1.errorbar(year[i], mag[i], yerr = mag_err[i], alpha = 0.5, color = 'black')
+					ax1.scatter(year[i], mag[i], color = 'crimson', alpha  = 0.5, s = 25, edgecolor = 'black')
+					ax1.errorbar(year[i], mag[i], yerr = mag_err[i], alpha = 0.5, color = 'black')
 
 	# wait, we are astronomers, we use magnitues, so we need to invert the y-axis gca = grab current axis
 
@@ -143,6 +154,7 @@ def DASCH_plotter(path, file, filename, imfile, tra, tdec, filt, pixmax, pixmin,
 	year = lc_data['year']
 	mag = lc_data['magcal_magdep']
 	mag_err = lc_data['magcal_local_rms']
+	qual = lc_data['quality']
 
 	table = ps1.getimages(tra,tdec,filters=filt)
 	print("{:.1f} s: got list of {} images for {} positions".format(time.time()-t0,len(table),len(tra)))
@@ -174,11 +186,13 @@ def DASCH_plotter(path, file, filename, imfile, tra, tdec, filt, pixmax, pixmin,
 	ax1 = plt.subplot(1,2,1)
 	ax2 = plt.subplot(1,2,2)
 
-	for i in range(len(year)):
-		if mag_err[i] < 0.4:
+	for i in range(len(qual)):
+		for fl in flags:
+			if qual[i] == fl:
+				if mag_err[i] < 0.4:
 
-			ax1.scatter(year[i], mag[i], color = 'crimson', alpha  = 0.5, s = 25, edgecolor = 'black')
-			ax1.errorbar(year[i], mag[i], yerr = mag_err[i], alpha = 0.5, color = 'black')
+					ax1.scatter(year[i], mag[i], color = 'crimson', alpha  = 0.5, s = 25, edgecolor = 'black')
+					ax1.errorbar(year[i], mag[i], yerr = mag_err[i], alpha = 0.5, color = 'black')
 
 	ax1.invert_yaxis()
 
@@ -198,41 +212,41 @@ def DASCH_plotter(path, file, filename, imfile, tra, tdec, filt, pixmax, pixmin,
 		plt.show()
 
 
-DASCH_plotter(path = path, file = file, filename = filename, imfile = 'TCrBPS1.pdf', tra= [239.8750], tdec =[25.9201389], filt = 'r', pixmax = 99, pixmin = 10, colormap = 'magma', save = True, show = True)    
+DASCH_plotter(path = path, file = file, filename = filename, imfile = 'TCrBPS1.pdf', tra= [239.8750], tdec =[25.9201389], filt = 'r', pixmax = 99.5, pixmin = 10, colormap = 'Greys_r', save = True, show = True)    
 
 
 
 
-print(ps1.getimages([120.0], [45.0], size=120, filters="r", format="fits", imagetypes="stack"))
+#print(ps1.getimages([120.0], [45.0], size=120, filters="r", format="fits", imagetypes="stack"))
 
-t0 = time.time()
+# t0 = time.time()
  
-# create a test set of image positions
-tdec = np.append(np.arange(31)*3.95 - 29.1, 88.0)
-tra = np.append(np.arange(31)*12., 0.0)
+# # create a test set of image positions
+# tdec = np.append(np.arange(31)*3.95 - 29.1, 88.0)
+# tra = np.append(np.arange(31)*12., 0.0)
 
-# get the PS1 info for those positions
-table = ps1.getimages(tra,tdec,filters="ri")
-print("{:.1f} s: got list of {} images for {} positions".format(time.time()-t0,len(table),len(tra)))
+# # get the PS1 info for those positions
+# table = ps1.getimages(tra,tdec,filters="ri")
+# print("{:.1f} s: got list of {} images for {} positions".format(time.time()-t0,len(table),len(tra)))
 
-# if you are extracting images that are close together on the sky,
-# sorting by skycell and filter will improve the performance because it takes
-# advantage of file system caching on the server
-table.sort(['projcell','subcell','filter'])
+# # if you are extracting images that are close together on the sky,
+# # sorting by skycell and filter will improve the performance because it takes
+# # advantage of file system caching on the server
+# table.sort(['projcell','subcell','filter'])
 
-# extract cutout for each position/filter combination
-for row in table:
-    ra = row['ra']
-    dec = row['dec']
-    projcell = row['projcell']
-    subcell = row['subcell']
-    filter = row['filter']
+# # extract cutout for each position/filter combination
+# for row in table:
+#     ra = row['ra']
+#     dec = row['dec']
+#     projcell = row['projcell']
+#     subcell = row['subcell']
+#     filter = row['filter']
 
-    # create a name for the image -- could also include the projection cell or other info
-    fname = "t{:08.4f}{:+07.4f}.{}.fits".format(ra,dec,filter)
+#     # create a name for the image -- could also include the projection cell or other info
+#     fname = "t{:08.4f}{:+07.4f}.{}.fits".format(ra,dec,filter)
 
-    url = row["url"]
-    print("%11.6f %10.6f skycell.%4.4d.%3.3d %s" % (ra, dec, projcell, subcell, fname))
-    r = requests.get(url)
-    open(fname,"wb").write(r.content)
-print("{:.1f} s: retrieved {} FITS files for {} positions".format(time.time()-t0,len(table),len(tra)))
+#     url = row["url"]
+#     print("%11.6f %10.6f skycell.%4.4d.%3.3d %s" % (ra, dec, projcell, subcell, fname))
+#     r = requests.get(url)
+#     open(fname,"wb").write(r.content)
+# print("{:.1f} s: retrieved {} FITS files for {} positions".format(time.time()-t0,len(table),len(tra)))
